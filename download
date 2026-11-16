@@ -1,0 +1,7 @@
+*.pem
+*.key
+*.crt
+*.cert
+.env
+.DS_Store
+__pycache__/

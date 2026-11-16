@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitor Counter — Live</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap');
+
+  :root {
+    --bg: #14171A;
+    --panel: #1E2225;
+    --panel-edge: #2B3034;
+    --amber: #FFB000;
+    --amber-dim: #7A5200;
+    --paper: #ECE7DE;
+    --steel: #6B7580;
+    --red-alert: #C1432E;
+    --green-live: #4C9A6E;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at top, rgba(255,176,0,0.05), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+    color: var(--paper);
+    font-family: 'IBM Plex Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .rig {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lamp {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--steel);
+    box-shadow: 0 0 0 rgba(76,154,110,0);
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+  }
+  .lamp.live {
+    background: var(--green-live);
+    box-shadow: 0 0 8px 2px rgba(76,154,110,0.55);
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  .lamp.offline {
+    background: var(--red-alert);
+    box-shadow: 0 0 8px 2px rgba(193,67,46,0.5);
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  .eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--steel);
+  }
+
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 40px);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--paper);
+    text-align: center;
+  }
+
+  .board {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    padding: 36px 28px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 24px 48px -20px rgba(0,0,0,0.6);
+    display: flex;
+    gap: 8px;
+  }
+
+  .digit {
+    position: relative;
+    width: 58px;
+    height: 84px;
+    background: linear-gradient(180deg, #23282C 0%, #1A1E21 100%);
+    border-radius: 4px;
+    border: 1px solid #33393E;
+    overflow: hidden;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.4) inset;
+  }
+
+  .digit::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(0,0,0,0.55);
+    z-index: 2;
+  }
+
+  .digit span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 44px;
+    color: var(--amber);
+    text-shadow: 0 0 14px rgba(255,176,0,0.35);
+  }
+
+  .digit.flip span {
+    animation: flip 0.45s cubic-bezier(0.5, 0, 0.5, 1);
+  }
+
+  @keyframes flip {
+    0%   { transform: rotateX(0deg);   opacity: 1; }
+    45%  { transform: rotateX(90deg);  opacity: 0.2; }
+    55%  { transform: rotateX(-90deg); opacity: 0.2; }
+    100% { transform: rotateX(0deg);   opacity: 1; }
+  }
+
+  .caption {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--steel);
+    text-align: center;
+  }
+
+  .press-button {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--amber);
+    border: none;
+    border-radius: 999px;
+    padding: 16px 48px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -8px rgba(255,176,0,0.6);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+  }
+  .press-button:hover {
+    background: #FFC233;
+  }
+  .press-button:active {
+    transform: scale(0.96);
+    box-shadow: 0 4px 10px -6px rgba(255,176,0,0.5);
+  }
+  .press-button:disabled {
+    background: var(--amber-dim);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .error-banner {
+    display: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    color: var(--red-alert);
+    text-align: center;
+  }
+  .error-banner.show { display: block; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .digit.flip span { animation: none; }
+    .lamp.live { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="rig">
+    <div class="eyebrow-row">
+      <span class="lamp" id="lamp"></span>
+      <span class="eyebrow" id="statusText">Connecting</span>
+    </div>
+
+    <h1>Live Visitor Count</h1>
+
+    <div class="board" id="board" aria-live="polite" aria-label="Visitor count"></div>
+
+    <button class="press-button" id="pressButton">I'm here</button>
+
+    <div class="caption" id="caption">Updated just now</div>
+    <div class="error-banner" id="errorBanner">Couldn't reach the counter — retrying…</div>
+  </div>
+
+<script>
+  // GET endpoint — reads the current count (used for the 2s auto-refresh).
+  const API_URL = "https://dl4dqwtta9.execute-api.us-east-1.amazonaws.com/count";
+  // POST endpoint — increments the count. Same API Gateway, different route.
+  const INCREMENT_URL = "https://dl4dqwtta9.execute-api.us-east-1.amazonaws.com/increment";
+
+  const POLL_INTERVAL_MS = 2000;
+  const DIGIT_COUNT = 5; // pads with leading zeros, e.g. 00042
+
+  const board = document.getElementById('board');
+  const lamp = document.getElementById('lamp');
+  const statusText = document.getElementById('statusText');
+  const caption = document.getElementById('caption');
+  const errorBanner = document.getElementById('errorBanner');
+  const pressButton = document.getElementById('pressButton');
+
+  let currentDigits = null;
+
+  function buildDigits(n) {
+    const str = String(n).padStart(DIGIT_COUNT, '0').slice(-DIGIT_COUNT);
+    return str.split('');
+  }
+
+  function renderDigits(digits, changedIndexes) {
+    board.innerHTML = '';
+    digits.forEach((d, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'digit' + (changedIndexes.has(i) ? ' flip' : '');
+      const span = document.createElement('span');
+      span.textContent = d;
+      cell.appendChild(span);
+      board.appendChild(cell);
+    });
+  }
+
+  function updateCount(count) {
+    const digits = buildDigits(count);
+    if (currentDigits === null) {
+      renderDigits(digits, new Set());
+    } else {
+      const changed = new Set();
+      digits.forEach((d, i) => {
+        if (currentDigits[i] !== d) changed.add(i);
+      });
+      renderDigits(digits, changed);
+    }
+    currentDigits = digits;
+  }
+
+  function setLive() {
+    lamp.className = 'lamp live';
+    statusText.textContent = 'Live';
+    errorBanner.classList.remove('show');
+  }
+
+  function setOffline() {
+    lamp.className = 'lamp offline';
+    statusText.textContent = 'Offline';
+    errorBanner.classList.add('show');
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(API_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Bad response: ' + res.status);
+      const data = await res.json();
+      updateCount(data.count);
+      setLive();
+      caption.innerHTML = 'Updated just now';
+    } catch (err) {
+      setOffline();
+      console.error('Poll failed:', err);
+    }
+  }
+
+  async function handlePress() {
+    pressButton.disabled = true;
+    try {
+      const res = await fetch(INCREMENT_URL, { method: 'POST' });
+      if (!res.ok) throw new Error('Bad response: ' + res.status);
+      const data = await res.json();
+      updateCount(data.count);
+      setLive();
+      caption.innerHTML = 'Updated just now';
+    } catch (err) {
+      setOffline();
+      console.error('Increment failed:', err);
+    } finally {
+      pressButton.disabled = false;
+    }
+  }
+
+  pressButton.addEventListener('click', handlePress);
+
+  // Initial placeholder so the board isn't empty before the first fetch.
+  updateCount(0);
+  poll();
+  setInterval(poll, POLL_INTERVAL_MS);
+</script>
+
+</body>
+</html>
